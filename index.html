@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Product Showcase — Specs Visible</title>
+  <style>
+    :root{
+      --bg:#071324; --card:#07192a; --muted:#98a0b3; --accent:#1f8ef1; --glass: rgba(255,255,255,0.03);
+      --radius:12px; font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;background:linear-gradient(180deg,#061125 0%,#071424 100%);color:#e6eef6}
+    header{padding:12px 14px;display:flex;gap:10px;align-items:center;position:sticky;top:0;background:rgba(7,17,36,0.6);backdrop-filter: blur(6px);z-index:5}
+    .brand{font-weight:700;font-size:16px}
+    .search{flex:1;min-width:140px}
+    input[type="search"]{width:100%;padding:10px 12px;border-radius:10px;border:0;background:var(--glass);color:inherit;font-size:14px}
+    select{padding:8px 10px;border-radius:10px;border:0;background:var(--glass);color:inherit;font-size:14px}
+    main{padding:12px}
+    .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+    @media(min-width:720px){.grid{grid-template-columns:repeat(3,1fr)}}
+    @media(min-width:1000px){.grid{grid-template-columns:repeat(4,1fr)}}
+    .card{background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:10px;border-radius:12px;border:1px solid rgba(255,255,255,0.03);display:flex;flex-direction:column;gap:8px;min-height:260px}
+    .imgwrap{width:100%;aspect-ratio:1.6/1;border-radius:8px;overflow:hidden;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.01)}
+    .imgwrap img{width:100%;height:100%;object-fit:contain;display:block}
+    .title{font-size:14px;font-weight:700;line-height:1.2}
+    .meta{display:flex;justify-content:space-between;align-items:center;gap:8px}
+    .price{font-weight:800;color:var(--accent)}
+    .rating{font-size:12px;color:var(--muted)}
+    .specs-summary{font-size:12px;color:var(--muted);display:block;margin-top:6px}
+    .specs{background:rgba(255,255,255,0.02);border-radius:10px;padding:8px;font-size:12px;color:var(--muted);display:none}
+    .specs.open{display:block}
+    .spec-row{display:flex;justify-content:space-between;margin:6px 0}
+    .actions{display:flex;gap:8px;align-items:center}
+    .btn{flex:1;padding:8px;border-radius:10px;background:linear-gradient(90deg,var(--accent),#2aa0ff);color:#022033;border:0;font-weight:700;font-size:13px;cursor:pointer}
+    .linkbtn{background:transparent;border:0;color:var(--muted);font-size:13px;cursor:pointer;text-decoration:underline}
+    .pill{padding:6px 8px;border-radius:999px;background:rgba(255,255,255,0.02);font-size:12px;color:var(--muted)}
+    footer{padding:16px;text-align:center;color:var(--muted);font-size:13px}
+    /* modal */
+    .modal{position:fixed;inset:0;display:flex;align-items:flex-end;justify-content:center;padding:16px;pointer-events:none}
+    .modal.open{pointer-events:auto}
+    .modal-card{width:100%;max-width:760px;border-radius:14px;background:#07172a;padding:14px;border:1px solid rgba(255,255,255,0.04);max-height:86vh;overflow:auto}
+    .close{float:right;background:transparent;border:0;color:var(--muted);font-size:16px}
+    pre{background:rgba(255,255,255,0.02);padding:8px;border-radius:8px;color:var(--muted);overflow:auto;font-size:13px}
+    @media(max-width:420px){header{padding:10px}.brand{font-size:14px}input[type="search"]{padding:9px}}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">Sadman laptop</div>
+    <div class="search" style="max-width:420px">
+      <input id="q" type="search" placeholder="Search products, e.g., Vivobook" />
+    </div>
+    <div class="controls">
+      <select id="sort">
+        <option value="default">Sort: Featured</option>
+        <option value="price_asc">Price ↑</option>
+        <option value="price_desc">Price ↓</option>
+        <option value="rating_desc">Rating</option>
+      </select>
+    </div>
+  </header>
+
+  <main>
+    <div id="grid" class="grid" aria-live="polite"></div>
+    <footer>Mobile-responsive • Tap "Specs" to expand • Images from Star Tech product pages</footer>
+  </main>
+
+  <!-- modal -->
+  <div id="modal" class="modal" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-modal="true">
+      <button id="close" class="close">✕</button>
+      <div id="detail"></div>
+    </div>
+  </div>
+
+  <script>
+    const products = [
+      { name: "ASUS VivoBook 15 X1500EA", cpu: "Intel Core i3-1115G4", ram: "8GB DDR4", storage: "512GB SSD", display: "15.6\" FHD, Anti-glare", features: ["Backlit Keyboard","Type-C"], price_bdt:58500, rating:3.3, link:"https://www.startech.com.bd/asus-vivobook-15-x1500ea-core-i3-11th-gen-laptop", img:"https://www.startech.com.bd/image/cache/catalog/laptop/asus/x1500ea/x1500ea-01-500x500.webp" },
+      { name: "ASUS Vivobook 15 X1504VA", cpu: "Intel Core i3-1315U", ram: "8GB DDR4", storage: "512GB NVMe SSD", display: "15.6\" FHD", features:["Backlit Keyboard","Type-C","Privacy Shutter"], price_bdt:60800, rating:3.6, link:"https://www.startech.com.bd/asus-vivobook-15-x1504va-laptop", img:"https://www.startech.com.bd/image/cache/catalog/laptop/asus/vivobook-15-x1504va/vivobook-15-x1504va-01-500x500.webp" },
+      { name: "HP 15-fd0176TU", cpu: "Intel Core i3-1315U (13th Gen)", ram: "16GB DDR4 3200MHz", storage: "512GB PCIe NVMe SSD", display: "15.6\" FHD, Anti-glare", features:["Privacy Shutter","Type-C","Wi-Fi 6"], price_bdt:61000, rating:4.5, link:"https://www.startech.com.bd/hp-15-fd0176tu-core-i3-13th-gen-laptop", img:"https://www.startech.com.bd/image/cache/catalog/laptop/hp-laptop/15-fd0807tu/15-fd0807tu-01-500x500.webp" },
+      { name: "HP 15-fd0180TU", cpu: "Intel Core i3-1315U (13th Gen)", ram: "16GB DDR4 3200MHz", storage: "512GB PCIe NVMe SSD", display: "15.6\" FHD, Anti-glare", features:["Privacy Shutter","Type-C","Wi-Fi 6","Bluetooth 5.4"], price_bdt:61500, rating:4.4, link:"https://www.startech.com.bd/hp-15-fd0180tu-core-i3-laptop", img:"https://www.startech.com.bd/image/cache/catalog/laptop/hp-laptop/15-fd0180tu/15-fd0180tu-01-500x500.webp" },
+      { name: "ASUS VivoBook Go 15 OLED E1504FA", cpu:"AMD Ryzen 3 7320U", ram:"8GB LPDDR5", storage:"512GB SSD", display:"15.6\" FHD OLED", features:["Backlit Keyboard","Type-C"], price_bdt:63500, rating:3.9, link:"https://www.startech.com.bd/asus-vivobook-go-15-oled-e1504fa-ryzen-3-laptop", img:"https://www.startech.com.bd/image/cache/catalog/laptop/asus/vivobook-go-15-e1504fa/vivobook-go-15-e1504fa-01-500x500.webp" },
+      { name: "ASUS VivoBook Go 15 L1504FA (Ryzen 5 7520U)", cpu:"AMD Ryzen 5 7520U", ram:"16GB LPDDR5", storage:"512GB NVMe SSD", display:"15.6\" FHD", features:["Privacy Shutter","Type-C","Wi-Fi 6E"], price_bdt:64500, rating:4.0, link:"https://www.startech.com.bd/asus-vivobook-go-15-l1504fa-ryzen-5-16gb-ram-laptop-mixed-black", img:"https://www.startech.com.bd/image/cache/catalog/laptop/asus/vivobook-go-15-l1504fa/vivobook-go-15-l1504fa-mixed-black-01-500x500.webp" },
+      { name: "ASUS ExpertBook P1 P1503CVA", cpu:"Intel Core i3-1315U", ram:"8GB DDR5", storage:"512GB SSD", display:"15.6\" FHD (Anti-glare)", features:["Fingerprint","Type-C","Wi-Fi 6"], price_bdt:63500, rating:3.7, link:"https://www.startech.com.bd/asus-expertbook-p1-p1503cva-core-i3-13th-gen-laptop", img:"https://www.startech.com.bd/image/cache/catalog/laptop/asus/expertbook-p1-p1403cva/expertbook-p1-p1403cva-01-500x500.webp" },
+      { name: "Lenovo IdeaPad 1 15AMN7", cpu:"AMD Ryzen 5 7520U", ram:"16GB LPDDR5", storage:"512GB SSD", display:"15.6\" FHD", features:[], price_bdt:62500, rating:4.2, link:"https://www.startech.com.bd/lenovo-ideapad-1-15amn7-ryzen-5-7520u-fhd-laptop", img:"https://www.startech.com.bd/image/cache/catalog/laptop/lenovo/ideapad-1-15ada7/ideapad-1-15ada7-04-500x500.webp" }
+    ];
+
+    const grid = document.getElementById('grid'), q = document.getElementById('q'), sortEl = document.getElementById('sort'),
+          modal = document.getElementById('modal'), detail = document.getElementById('detail'), closeBtn = document.getElementById('close');
+
+    function formatCurrency(n){ return '৳' + Number(n).toLocaleString('en-BD'); }
+    function escapeHtml(str){ return String(str||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'","&#39;"); }
+    function starStr(r){ const full=Math.floor(r); const half=(r-full)>=0.5?'½':''; return '★'.repeat(full)+(half? '☆':'')+' '+r.toFixed(1); }
+
+    function render(list){
+      grid.innerHTML = '';
+      if(!list.length){ grid.innerHTML = '<div style="grid-column:1/-1;color:var(--muted);padding:20px;text-align:center">No products found</div>'; return; }
+      list.forEach((p,idx)=>{
+        const card = document.createElement('article'); card.className='card';
+        const features = (p.features && p.features.length)? p.features.join(' • '): '—';
+        const summary = `${p.cpu || ''} • ${p.ram || ''} • ${p.storage || ''}`;
+        card.innerHTML = `
+          <div class="imgwrap"><img loading="lazy" src="${p.img}" alt="${escapeHtml(p.name)}"></div>
+          <div class="title">${escapeHtml(p.name)}</div>
+          <div class="meta">
+            <div class="pill">${(p.cpu||'').split(' ')[0] || ''}</div>
+            <div class="rating">${starStr(p.rating||0)}</div>
+          </div>
+          <div class="specs-summary">${escapeHtml(summary)}</div>
+          <div class="specs" id="specs-${idx}">
+            <div class="spec-row"><strong>CPU</strong><span>${escapeHtml(p.cpu||'—')}</span></div>
+            <div class="spec-row"><strong>RAM</strong><span>${escapeHtml(p.ram||'—')}</span></div>
+            <div class="spec-row"><strong>Storage</strong><span>${escapeHtml(p.storage||'—')}</span></div>
+            <div class="spec-row"><strong>Display</strong><span>${escapeHtml(p.display||'—')}</span></div>
+            <div class="spec-row"><strong>Extras</strong><span>${escapeHtml(features)}</span></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div class="price">${formatCurrency(p.price_bdt)}</div>
+            <div style="font-size:12px;color:var(--muted)">${escapeHtml(p.ram||'')}</div>
+          </div>
+          <div class="actions">
+            <button class="btn" data-link="${p.link}">Buy / Details</button>
+            <button class="linkbtn" data-open='${encodeURIComponent(JSON.stringify(p))}'>Quick</button>
+            <button class="linkbtn" data-toggle="specs" data-target="${idx}">Specs</button>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+      attachHandlers();
+    }
+
+    function attachHandlers(){
+      document.querySelectorAll('.btn').forEach(b=>b.onclick=(e)=>window.open(e.currentTarget.getAttribute('data-link'), '_blank'));
+      document.querySelectorAll('[data-open]').forEach(b=>{
+        b.onclick = (e)=>{
+          const raw = decodeURIComponent(e.currentTarget.getAttribute('data-open'));
+          try{ openModal(JSON.parse(raw)); }catch(err){ console.error(err) }
+        }
+      });
+      document.querySelectorAll('[data-toggle="specs"]').forEach(btn=>{
+        btn.onclick = (e)=>{
+          const id = e.currentTarget.getAttribute('data-target');
+          const el = document.getElementById('specs-'+id);
+          if(!el) return;
+          el.classList.toggle('open');
+          // optional: scroll card into view on mobile
+          e.currentTarget.closest('.card').scrollIntoView({behavior:'smooth',block:'center'});
+        }
+      });
+    }
+
+    function openModal(p){
+      const features = (p.features && p.features.length)? p.features.join(', '): '—';
+      detail.innerHTML = `
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+          <div style="flex:1;min-width:160px"><img src="${p.img}" style="width:100%;border-radius:8px;object-fit:contain"></div>
+          <div style="flex:2;min-width:220px">
+            <h3 style="margin:0 0 8px 0">${escapeHtml(p.name)}</h3>
+            <div style="color:var(--muted);font-size:13px;margin-bottom:8px">${escapeHtml(p.cpu)} • ${escapeHtml(p.ram)} • ${escapeHtml(p.storage||'')}</div>
+            <div style="font-weight:800;font-size:18px;color:var(--accent)">${formatCurrency(p.price_bdt)}</div>
+            <div style="margin-top:8px;color:var(--muted);font-size:13px">Rating: ${p.rating} • <a href="${p.link}" target="_blank" style="color:var(--muted)">View on store</a></div>
+            <div style="margin-top:12px"><strong>Specs</strong>
+              <pre>${escapeHtml(
+                `CPU: ${p.cpu||'—'}
+RAM: ${p.ram||'—'}
+Storage: ${p.storage||'—'}
+Display: ${p.display||'—'}
+Extras: ${features}`
+              )}</pre>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <button onclick="window.open('${p.link}','_blank')" class="btn">Open Store</button>
+              <button onclick="downloadSpecFromModal()" class="linkbtn">Export JSON</button>
+            </div>
+          </div>
+        </div>
+      `;
+      modal.classList.add('open'); modal.setAttribute('aria-hidden','false');
+    }
+
+    function downloadSpecFromModal(){
+      const txt = detail.querySelector('pre')?.textContent || '{}';
+      const blob = new Blob([txt], {type:'text/plain'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = 'product-spec.txt'; a.click(); URL.revokeObjectURL(url);
+    }
+
+    closeBtn.onclick = ()=>{ modal.classList.remove('open'); modal.setAttribute('aria-hidden','true'); }
+    modal.addEventListener('click', (e)=>{ if(e.target === modal){ modal.classList.remove('open'); modal.setAttribute('aria-hidden','true'); } });
+
+    // Search / sort
+    function filterAndSort(){
+      const qv = q.value.trim().toLowerCase();
+      let list = products.filter(p=>{
+        if(!qv) return true;
+        return (p.name + ' ' + (p.cpu||'') + ' ' + (p.ram||'') + ' ' + (p.storage||'') + ' ' + (p.features||'')).toLowerCase().includes(qv);
+      });
+      const s = sortEl.value;
+      if(s === 'price_asc') list.sort((a,b)=> (a.price_bdt||0)-(b.price_bdt||0));
+      if(s === 'price_desc') list.sort((a,b)=> (b.price_bdt||0)-(a.price_bdt||0));
+      if(s === 'rating_desc') list.sort((a,b)=> (b.rating||0)-(a.rating||0));
+      render(list);
+    }
+
+    q.addEventListener('input', debounce(filterAndSort, 160));
+    sortEl.addEventListener('change', filterAndSort);
+
+    // init
+    render(products);
+
+    function debounce(fn, ms){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; }
+  </script>
+</body>
+</html>
